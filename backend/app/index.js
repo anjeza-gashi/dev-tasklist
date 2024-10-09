@@ -1,9 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise'); // Using promise-based API
+const cors = require('cors'); 
 
 const app = express();
 const port = 5000;
+
+app.use(cors());
 
 const pool = mysql.createPool({
   host: 'mysql',
@@ -41,6 +44,22 @@ app.post('/api/bookings', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+app.get('/api/bookings/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = 'SELECT * FROM bookings WHERE id = ?';
+  try {
+    const [results] = await pool.query(query, [id]); 
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    res.status(200).json(results[0]);
+  } catch (error) {
+    console.error('Error fetching booking by ID:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
